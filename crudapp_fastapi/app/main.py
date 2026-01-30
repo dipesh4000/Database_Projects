@@ -2,6 +2,7 @@ from fastapi import FastAPI, Response, status, HTTPException
 from fastapi.params import Body
 from pydantic import BaseModel
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 
 app = FastAPI()
@@ -11,26 +12,40 @@ class Post(BaseModel):
   content: str
   published: bool = True
 
-DB_NAME = "tkgafrwp"
-DB_USER = "tkgafrwp"
-DB_PASS = "iYYtLAXVbid-i6MV3NO1EnU-_9SW2uEi"
-DB_HOST = "tyke.db.elephantsql.com"
+#database credentials
+
+DB_NAME = "crud"
+DB_USER = "postgres"
+DB_PASS = "PostgreSQL@1"
+DB_HOST = "localhost"
 DB_PORT = "5432"
 
-try:
-    conn = psycopg2.connect(database=DB_NAME,
-                            user=DB_USER,
-                            password=DB_PASS,
-                            host=DB_HOST,
-                            port=DB_PORT)
-    print("Database connected successfully")
-except:
-    print("Database not connected successfully")
+#database connection 
+
+while True:
+    try:
+        conn = psycopg2.connect(
+                    host=DB_HOST,
+                    database=DB_NAME,
+                    user=DB_USER,
+                    password=DB_PASS,
+                    port=DB_PORT,
+                    cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+        print("Database connected successfully")
+    except Exception as error:
+        print("Database not connected")
+        print("Error: ", error)
+        time.sleep(2)
+
+
 
 my_posts = [
   {"title":"title of post1", "content":"content of post1", "id":1},
   {"title":"title of post2", "content":"content of post2", "id":2}
   ]
+
+#Routing
 
 def find_post(id: int):
     for p in my_posts:
@@ -41,8 +56,6 @@ def find_index_post(id):
     for i,p in enumerate(my_posts):
       if p["id"] == id:
         return i
-
-
 
 @app.get("/")
 def root():
