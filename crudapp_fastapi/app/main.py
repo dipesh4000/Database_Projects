@@ -21,22 +21,20 @@ DB_HOST = "localhost"
 DB_PORT = "5432"
 
 #database connection 
-
-while True:
-    try:
-        conn = psycopg2.connect(
+try:
+    conn = psycopg2.connect(
                     host=DB_HOST,
                     database=DB_NAME,
                     user=DB_USER,
                     password=DB_PASS,
                     port=DB_PORT,
                     cursor_factory=RealDictCursor)
-        cursor = conn.cursor()
-        print("Database connected successfully")
-    except Exception as error:
-        print("Database not connected")
-        print("Error: ", error)
-        time.sleep(2)
+    cursor = conn.cursor()
+    print("Database connected successfully")
+except Exception as error:
+    print("Database not connected")
+    print("Error: ", error)
+    time.sleep(2)
 
 
 
@@ -64,7 +62,9 @@ def root():
 
 @app.get("/posts")
 def get_posts():
-    return {"data":my_posts}
+    cursor.execute("""SELECT * FROM posts""")
+    posts = cursor.fetchall()
+    return {"data":posts}
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
