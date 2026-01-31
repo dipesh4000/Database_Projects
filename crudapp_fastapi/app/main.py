@@ -46,9 +46,11 @@ my_posts = [
 #Routing
 
 def find_post(id: int):
-    for p in my_posts:
-      if p["id"] == id:
-        return p
+    cursor.execute("""SELECT * FROM posts WHERE id = %s;""", (str(id),))
+
+    p = cursor.fetchone()
+
+    return p
 
 def find_index_post(id):
     for i,p in enumerate(my_posts):
@@ -68,8 +70,13 @@ def get_posts():
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def createpost(new_post: Post):
-    my_posts.append(new_post.dict())
+def createpost(post: Post):
+    cursor.execute("""INSERT INTO public.posts(title, content, published)
+	VALUES (%s, %s, %s) RETURNING * ;""",(post.title, post.content, post.published))
+    new_post = cursor.fetchone()
+
+    conn.commit()
+
     return {"data": new_post}
 
 
@@ -90,6 +97,9 @@ def get_post(id:int, response: Response):
 
 @app.delete("/posts/{id}", status_code=status.HTTP_404_NOT_FOUND)
 def delete_post(id: int):
+
+    cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""", (str(id),))
+    deleted_post = cursor.fetchone()
     index = find_index_post(id)
 
     if index == None:
