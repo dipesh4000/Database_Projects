@@ -1,11 +1,19 @@
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 import psycopg2
+import time
 from psycopg2.extras import RealDictCursor
+from sqlalchemy.orm import Session
+from . import models
+from .database import engine, SessionLocal, get_db
 
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+
 
 class Post(BaseModel):
   title: str
@@ -36,12 +44,6 @@ except Exception as error:
     print("Error: ", error)
     time.sleep(2)
 
-
-
-my_posts = [
-  {"title":"title of post1", "content":"content of post1", "id":1},
-  {"title":"title of post2", "content":"content of post2", "id":2}
-  ]
 
 #Routing
 
@@ -118,3 +120,8 @@ def update_post(id: int, post: Post):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with id: {id} does not exist")
     return {"data": updated_post}
+
+
+@app.get("/sql")
+def test_posts(db: Session = Depends(get_db)):
+    return {"data": posts}
