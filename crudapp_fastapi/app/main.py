@@ -65,21 +65,10 @@ def root():
 
 
 @app.get("/posts")
-def get_posts():
-    cursor.execute("""SELECT * FROM posts""")
-    posts = cursor.fetchall()
+def get_posts(db: Session = Depends(get_db)):
+    # cursor.execute("""SELECT * FROM posts""")
+    posts = db.query(models.Post).all()
     return {"data":posts}
-
-
-@app.post("/posts", status_code=status.HTTP_201_CREATED)
-def createpost(post: Post):
-    cursor.execute("""INSERT INTO public.posts(title, content, published)
-	VALUES (%s, %s, %s) RETURNING * ;""",(post.title, post.content, post.published))
-    new_post = cursor.fetchone()
-
-    conn.commit()
-
-    return {"data": new_post}
 
 
 @app.get("/posts/latest")
@@ -88,14 +77,28 @@ def get_latest():
     return {"detail": post}
 
 
-
 @app.get("/posts/{id}")
-def get_post(id:int, response: Response):
+def get_post(id:int, db: Session = Depends(get_db)):
     post = find_post(id)
     if not post:
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, 
                             detail = f"post with id: {id} was not found")
     return {"post_detail": post}
+
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
+def createpost(post: Post, db: Session = Depends(get_db)):
+    # cursor.execute("""INSERT INTO public.posts(title, content, published)
+	# VALUES (%s, %s, %s) RETURNING * ;""",(post.title, post.content, post.published))
+    # new_post = cursor.fetchone()
+
+    # conn.commit()
+    new_post = models.Post(**post.dict())
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+
+    return {"data": new_post}
+
 
 @app.delete("/posts/{id}", status_code=status.HTTP_404_NOT_FOUND)
 def delete_post(id: int):
@@ -121,7 +124,3 @@ def update_post(id: int, post: Post):
                             detail=f"post with id: {id} does not exist")
     return {"data": updated_post}
 
-
-@app.get("/sql")
-def test_posts(db: Session = Depends(get_db)):
-    return {"data": posts}
