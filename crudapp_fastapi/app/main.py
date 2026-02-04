@@ -44,7 +44,7 @@ def root():
     return {"message":"Hii World, how are you"}
 
 
-@app.get("/posts")
+@app.get("/posts", response_model= schemas.Post)
 def get_posts(db: Session = Depends(get_db)):
     # cursor.execute("""SELECT * FROM posts""")
     posts = db.query(models.Post).all()
