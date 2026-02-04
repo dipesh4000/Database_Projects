@@ -5,20 +5,12 @@ import psycopg2
 import time
 from psycopg2.extras import RealDictCursor
 from sqlalchemy.orm import Session
-from . import models
+from . import models, schemas
 from .database import engine, SessionLocal, get_db
-
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-
-
-class Post(BaseModel):
-  title: str
-  content: str
-  published: bool = True
 
 #database credentials
 
@@ -47,18 +39,6 @@ except Exception as error:
 
 #Routing
 
-def find_post(id: int):
-    cursor.execute("""SELECT * FROM posts WHERE id = %s;""", (str(id),))
-
-    p = cursor.fetchone()
-
-    return p
-
-def find_index_post(id):
-    for i,p in enumerate(my_posts):
-      if p["id"] == id:
-        return i
-
 @app.get("/")
 def root():
     return {"message":"Hii World, how are you"}
@@ -68,25 +48,25 @@ def root():
 def get_posts(db: Session = Depends(get_db)):
     # cursor.execute("""SELECT * FROM posts""")
     posts = db.query(models.Post).all()
-    return {"data":posts}
+    return posts
 
 
-@app.get("/posts/latest")
-def get_latest():
-    post = my_posts[len(my_posts)-1]
-    return {"detail": post}
+# @app.get("/posts/latest")
+# def get_latest():
+#     post = my_posts[len(my_posts)-1]
+#     return {"detail": post}
 
 
 @app.get("/posts/{id}")
 def get_post(id:int, db: Session = Depends(get_db)):
-    post = find_post(id)
+    post = db.query(models.Post).filter(models.Post.id == id).first()
     if not post:
         raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, 
                             detail = f"post with id: {id} was not found")
-    return {"post_detail": post}
+    return post
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def createpost(post: Post, db: Session = Depends(get_db)):
+def createpost(post: schemas.PostBase, db: Session = Depends(get_db)):
     # cursor.execute("""INSERT INTO public.posts(title, content, published)
 	# VALUES (%s, %s, %s) RETURNING * ;""",(post.title, post.content, post.published))
     # new_post = cursor.fetchone()
@@ -97,30 +77,45 @@ def createpost(post: Post, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_post)
 
-    return {"data": new_post}
+    return new_post
 
 
 @app.delete("/posts/{id}", status_code=status.HTTP_404_NOT_FOUND)
-def delete_post(id: int):
-    cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""", (str(id),))
-    deleted_post = cursor.fetchone()
-    conn.commit()
-    if deleted_post == None:
+def delete_post(id: int, db: Session = Depends(get_db)):
+    # cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""", (str(id),))
+    # deleted_post = cursor.fetchone()
+    # conn.commit()
+    post = db.query(models.Post).filter(models.Post.id == id)
+
+    if post.first() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with id: {id} does not exist")
+
+    post.delete(synchronize_session=False)
+
+    db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: Post):
-    cursor.execute("""UPDATE posts SET title = %s, content = %s, 
-    published = %s WHERE id = %s RETURNING *;""", (post.title, post.content, post.published, str(id)))
+def update_post(id: int, post: schemas.PostBase, db: Session = Depends(get_db)):
+    # cursor.execute("""UPDATE posts SET title = %s, content = %s, 
+    # published = %s WHERE id = %s RETURNING *;""", (post.title, post.content, post.published, str(id)))
 
-    updated_post = cursor.fetchone()
+    # updated_post = cursor.fetchone()
 
-    conn.commit()
+    # conn.commit()
+
+    post_query = db.query(models.Post).filter(models.Post.id == id)
+
+    updated_post = post_query.first()
 
     if updated_post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with id: {id} does not exist")
-    return {"data": updated_post}
+
+    post_query.update(post.dict(), synchronize_session=False)
+
+    db.commit()
+
+    return updated_post
 
