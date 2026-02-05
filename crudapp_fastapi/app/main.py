@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
@@ -44,7 +45,7 @@ def root():
     return {"message":"Hii World, how are you"}
 
 
-@app.get("/posts", response_model= schemas.Post)
+@app.get("/posts", response_model= List[schemas.Post])
 def get_posts(db: Session = Depends(get_db)):
     # cursor.execute("""SELECT * FROM posts""")
     posts = db.query(models.Post).all()
