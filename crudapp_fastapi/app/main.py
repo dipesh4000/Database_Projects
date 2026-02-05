@@ -67,7 +67,7 @@ def get_post(id:int, db: Session = Depends(get_db)):
     return post
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def createpost(post: schemas.PostBase, db: Session = Depends(get_db)):
+def createpost(post: schemas.Post, db: Session = Depends(get_db)):
     # cursor.execute("""INSERT INTO public.posts(title, content, published)
 	# VALUES (%s, %s, %s) RETURNING * ;""",(post.title, post.content, post.published))
     # new_post = cursor.fetchone()
