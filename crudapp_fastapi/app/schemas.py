@@ -20,3 +20,6 @@ class Post(PostBase):
     from_attributes = True
 
 
+class UserLogin(BaseModel):
+   email: Emailstr
+   password: str
