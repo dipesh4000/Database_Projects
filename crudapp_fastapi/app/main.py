@@ -16,27 +16,27 @@ app = FastAPI()
 
 #database credentials
 
-DB_NAME = "crud"
-DB_USER = "postgres"
-DB_PASS = "PostgreSQL@1"
-DB_HOST = "localhost"
-DB_PORT = "5432"
+# DB_NAME = "crud"
+# DB_USER = "postgres"
+# DB_PASS = "PostgreSQL@1"
+# DB_HOST = "localhost"
+# DB_PORT = "5432"
 
-#database connection 
-try:
-    conn = psycopg2.connect(
-                    host=DB_HOST,
-                    database=DB_NAME,
-                    user=DB_USER,
-                    password=DB_PASS,
-                    port=DB_PORT,
-                    cursor_factory=RealDictCursor)
-    cursor = conn.cursor()
-    print("Database connected successfully")
-except Exception as error:
-    print("Database not connected")
-    print("Error: ", error)
-    time.sleep(2)
+# #database connection 
+# try:
+#     conn = psycopg2.connect(
+#                     host=DB_HOST,
+#                     database=DB_NAME,
+#                     user=DB_USER,
+#                     password=DB_PASS,
+#                     port=DB_PORT,
+#                     cursor_factory=RealDictCursor)
+#     cursor = conn.cursor()
+#     print("Database connected successfully")
+# except Exception as error:
+#     print("Database not connected")
+#     print("Error: ", error)
+#     time.sleep(2)
 
 app.include_router(post.router)
 app.include_router(user.router) 
